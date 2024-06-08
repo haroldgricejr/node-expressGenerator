@@ -106,6 +106,7 @@ campsiteRouter.route('/:campsiteId/comments')
         Campsite.findById(req.params.campsiteId)
             .then(campsite => {
                 if (campsite) {
+                    req.body.author = req.user._id;
                     campsite.comments.push(req.body);
                     campsite.save()
                         .then(campsite => {
