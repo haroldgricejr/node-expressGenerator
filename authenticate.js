@@ -8,6 +8,8 @@ const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 const config = require('./config.js');
 
+const FacebookTokenStrategy = require('passport-facebook-token');
+
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
@@ -48,5 +50,35 @@ exports.jwtPassport = passport.use(
         }
     )
 );
+
+
+exports.facebookPassport = passport.use(
+  new FacebookTokenStrategy(
+    {
+      clientID: config.facebook.clientId,
+      clientSecret: config.facebook.clientSecret
+    },
+    (accessToken, refreshToken, profile, done) => {
+      User.findOne({ facebookId: profile.id }).then((user) => {
+        if (!user) {
+          return done(null, user);
+        } else {
+          user = new User({ username: profile.displayName });
+          user.facebookId = profile.id;
+          user.firstname = profile.name.givenName;
+          user.lastname = profile.name.familyName;
+          user.save((err, user) => {
+            if (!user) {
+              return done(null, user);
+            } else {
+              return done(null, user);
+            }
+          });
+        }
+      }).catch((err) => done(err, false));
+    }
+  )
+);
+
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
