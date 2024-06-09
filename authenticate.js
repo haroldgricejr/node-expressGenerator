@@ -52,33 +52,61 @@ exports.jwtPassport = passport.use(
 );
 
 
+// exports.facebookPassport = passport.use(
+//   new FacebookTokenStrategy(
+//     {
+//       clientID: config.facebook.clientId,
+//       clientSecret: config.facebook.clientSecret
+//     },
+//     (accessToken, refreshToken, profile, done) => {
+//       User.findOne({ facebookId: profile.id }).then((user) => {
+//         if (!user) {
+//           return done(null, user);
+//         } else {
+//           user = new User({ username: profile.displayName });
+//           user.facebookId = profile.id;
+//           user.firstname = profile.name.givenName;
+//           user.lastname = profile.name.familyName;
+//           user.save((err, user) => {
+//             if (!user) {
+//               return done(null, user);
+//             } else {
+//               return done(null, user);
+//             }
+//           });
+//         }
+//       }).catch((err) => done(err, false));
+//     }
+//   )
+// );
+
+
+
 exports.facebookPassport = passport.use(
   new FacebookTokenStrategy(
     {
       clientID: config.facebook.clientId,
       clientSecret: config.facebook.clientSecret
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({ facebookId: profile.id }).then((user) => {
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        let user = await User.findOne({ facebookId: profile.id });
         if (!user) {
-          return done(null, user);
-        } else {
           user = new User({ username: profile.displayName });
           user.facebookId = profile.id;
           user.firstname = profile.name.givenName;
           user.lastname = profile.name.familyName;
-          user.save((err, user) => {
-            if (!user) {
-              return done(null, user);
-            } else {
-              return done(null, user);
-            }
-          });
+          await user.save();
         }
-      }).catch((err) => done(err, false));
+        return done(null, user);
+      } catch (err) {
+        return done(err, false);
+      }
     }
   )
 );
+
+
 
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
